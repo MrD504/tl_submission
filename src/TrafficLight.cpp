@@ -1,5 +1,7 @@
 #include <iostream>
 #include <random>
+#include <cstdlib>
+#include <ctime>
 #include <algorithm>
 #include "TrafficLight.h"
 
@@ -14,7 +16,7 @@ T MessageQueue<T>::receive()
 	std::unique_lock<std::mutex> lck( _mutex );
 	_condition.wait( lck, [this] { return !_queue.empty(); } );
 	T queueItem = std::move( _queue.back() );
-	_queue.pop_back();
+	_queue.pop_front();
 
 	return queueItem;
 }
@@ -50,7 +52,6 @@ void TrafficLight::waitForGreen()
     // runs and repeatedly calls the receive function on the message queue. 
     // Once it receives TrafficLightPhase::green, the method returns.
 	while(true) {
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
 		if(_messages.receive() == TrafficLightPhase::green ) {
 			return;
 		};
@@ -75,8 +76,13 @@ void TrafficLight::cycleThroughPhases()
     // and toggles the current phase of the traffic light between red and green and sends an update method 
     // to the message queue using move semantics. The cycle duration should be a random value between 4 and 6 seconds. 
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles. 
-  
-	std::default_random_engine generator;
+
+	std::srand(std::time(0));
+	
+	int max_value = 6000, min_value = 4000, range;
+	range = max_value - min_value + 1;
+	
+	int randomDuration = rand() % max_value + min_value;
   	std::chrono::time_point<std::chrono::system_clock> lastUpdate;
   
   	// initiate stop watch
@@ -84,7 +90,6 @@ void TrafficLight::cycleThroughPhases()
 
   	//infinite loop
     while (true) {
-  		std::uniform_real_distribution<double> distribution( 4000, 6000 ); // set limits between 4000 and 6000 (4 and 6 seconds in milliseconds)
 
       	// wait between cycles
     	std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
@@ -92,10 +97,10 @@ void TrafficLight::cycleThroughPhases()
         long timeSinceLastUpdate = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::system_clock::now() - lastUpdate ).count();
       
 	    // wait for random amount of time between 4 and 6 seconds
-		double randomDuration = distribution( generator );
 		// std::cout << "time since update: " << timeSinceLastUpdate << ", random duration" << randomDuration << std::endl;
 		if( timeSinceLastUpdate >= randomDuration ) {
 			lastUpdate = std::chrono::system_clock::now();
+			randomDuration = rand() % max_value + min_value;
 			if( _currentPhase == TrafficLightPhase::red ) {
 				_currentPhase = TrafficLightPhase::green;
 			} else {
