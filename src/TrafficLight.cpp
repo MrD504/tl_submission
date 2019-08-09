@@ -41,9 +41,7 @@ TrafficLight::TrafficLight()
 
 TrafficLight::~TrafficLight()
 {
-	std::for_each(threads.begin(), threads.end(), [](std::thread &t) {
-        t.join();
-    });
+	
 }
 
 void TrafficLight::waitForGreen()
